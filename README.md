@@ -1,36 +1,11 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## BPE Visualizer
 
-## Getting Started
+This project is heavily inspired by the [Tiktokenizer](https://tiktokenizer.vercel.app) tokenization playground, which implements OpenAI's [tiktoken](https://github.com/openai/tiktoken) tokenization.
 
-First, run the development server:
+This project currently implements the simplest BPE algorithm, but I plan to add a bit more to it to make it functionally identical to the modified BPE algorithm used in the GPT-2 tokenizer. Primarily, this is a visualization/educational tool, as I couldn't get the idea out of my head of how it would look to "step through" the BPE algorithm. No plans currently to support all of the tiktoken encodings.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### To-Do
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Add regex rules to match GPT-2 tokenization output
+- Create and display vocab list for tokenized text
+- Display merged UTF-8 encoded characters as new IDs in vocab
