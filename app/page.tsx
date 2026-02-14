@@ -1,9 +1,16 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, memo } from "react";
-import type { BPEResult, BPEStep, Token } from "./bpe";
+import type { BPEResult, BPEStep, Token } from "./bpe.types";
+import { BYTE_TO_UNICODE } from "./bpe";
 
 type ViewMode = "text" | "utf8";
+
+const GPT2_NEWLINE = BYTE_TO_UNICODE.get(0x0a)!;
+const GPT2_SPACE = BYTE_TO_UNICODE.get(0x20)!;
+const RE_NEWLINE = new RegExp(GPT2_NEWLINE, "g");
+const RE_SPACE = new RegExp(GPT2_SPACE, "g");
+const RE_WHITESPACE = new RegExp(`^[${GPT2_SPACE}${GPT2_NEWLINE}]+$`);
 
 function tokenToUtf8(token: string): string {
   const bytes = new TextEncoder().encode(token);
@@ -42,11 +49,11 @@ const TokenChip = memo(function TokenChip({
   dimmed: boolean;
   onClick?: () => void;
 }) {
-  const isWhitespace = /^(\\n| )+$/.test(token);
+  const isWhitespace = RE_WHITESPACE.test(token);
   const display =
     viewMode === "utf8"
-      ? tokenToUtf8(token.replace(/\\n/g, "\n"))
-      : token.replace(/\\n/g, "↵");
+      ? tokenToUtf8(token)
+      : token.replace(RE_NEWLINE, "↵").replace(RE_SPACE, " ");
   return (
     <span
       onClick={onClick}
@@ -87,7 +94,7 @@ function TokenDisplay({
       className={`break-all overflow-hidden ${viewMode === "utf8" ? "leading-9" : "leading-8"}`}
     >
       {step.tokens.map((token, ti) => {
-        const hasNewline = token.includes("\\n");
+        const hasNewline = token.includes(GPT2_NEWLINE);
         return (
           <span key={`${ti}-${token}`}>
             <TokenChip
@@ -106,8 +113,8 @@ function TokenDisplay({
 }
 
 function formatToken(token: string, viewMode: ViewMode): string {
-  if (viewMode === "utf8") return tokenToUtf8(token.replace(/\\n/g, "\n"));
-  return token.replace(/\\n/g, "↵");
+  if (viewMode === "utf8") return tokenToUtf8(token);
+  return token.replace(RE_NEWLINE, "↵").replace(RE_SPACE, " ");
 }
 
 function MergeList({
@@ -305,7 +312,7 @@ function TokenInfoPanel({
         <span
           className={`inline-block font-mono text-lg px-3 py-1.5 rounded ${tokenColor(token)}`}
         >
-          {token}
+          {token.replace(RE_NEWLINE, "↵").replace(RE_SPACE, "␣")}
         </span>
         <div className="text-center">
           <span className="text-2xl font-bold text-gray-900">{count}</span>
