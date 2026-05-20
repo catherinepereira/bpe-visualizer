@@ -1,8 +1,9 @@
-"use client";
-
 import { useState, useEffect, useRef, useCallback, memo } from "react";
+import BpeWorker from "./bpe.worker.ts?worker";
 import type { BPEResult, BPEStep, Token } from "./bpe.types";
 import { BYTE_TO_UNICODE } from "./bpe";
+import { SiteHeader } from "./SiteHeader";
+import { StepControls } from "./StepControls";
 
 type ViewMode = "text" | "utf8";
 
@@ -59,7 +60,7 @@ const TokenChip = memo(function TokenChip({
       onClick={onClick}
       className={`
         inline font-mono text-sm leading-7 px-0.5 py-0.5 border-r border-black/10 break-all transition-opacity duration-150
-        ${isWhitespace ? "bg-gray-100 text-gray-400 text-xs" : tokenColor(token)}
+        ${isWhitespace ? "bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-500 text-xs" : `${tokenColor(token)} text-gray-900`}
         ${isNew ? "token-new" : ""}
         ${viewMode === "utf8" && !isWhitespace ? "text-xs tracking-wider" : ""}
         ${dimmed ? "opacity-20" : ""}
@@ -147,30 +148,30 @@ function MergeList({
               text-left px-3 py-1.5 rounded text-sm transition-colors cursor-pointer
               ${
                 isActive
-                  ? "bg-blue-50 border-l-3 border-blue-500 font-medium"
-                  : "hover:bg-gray-50 border-l-3 border-transparent"
+                  ? "bg-blue-50 dark:bg-blue-950/30 border-l-3 border-blue-500 dark:border-blue-500 font-medium"
+                  : "hover:bg-gray-50 dark:hover:bg-zinc-800/40 border-l-3 border-transparent"
               }
             `}
           >
             {step.stepIndex === 0 ? (
-              <span className="text-gray-500">Initial characters</span>
+              <span className="text-gray-500 dark:text-zinc-500">Initial characters</span>
             ) : (
               <div className="flex items-center gap-1.5">
-                <span className="text-gray-400 w-6 text-xs">
+                <span className="text-gray-400 dark:text-zinc-500 w-6 text-xs">
                   {step.stepIndex}
                 </span>
-                <code className="text-xs bg-gray-100 px-1 rounded">
+                <code className="text-xs bg-gray-100 dark:bg-zinc-800 px-1 rounded">
                   {formatToken(step.mergedPair![0], viewMode)}
                 </code>
-                <span className="text-gray-400">+</span>
-                <code className="text-xs bg-gray-100 px-1 rounded">
+                <span className="text-gray-400 dark:text-zinc-500">+</span>
+                <code className="text-xs bg-gray-100 dark:bg-zinc-800 px-1 rounded">
                   {formatToken(step.mergedPair![1], viewMode)}
                 </code>
-                <span className="text-gray-400">&rarr;</span>
-                <code className="text-xs bg-blue-50 px-1 rounded font-semibold text-blue-700">
+                <span className="text-gray-400 dark:text-zinc-500">&rarr;</span>
+                <code className="text-xs bg-blue-50 dark:bg-blue-950/30 px-1 rounded font-semibold text-blue-700 dark:text-blue-300">
                   {formatToken(step.newToken!, viewMode)}
                 </code>
-                <span className="text-gray-400 text-xs ml-auto">
+                <span className="text-gray-400 dark:text-zinc-500 text-xs ml-auto">
                   &times;{step.frequency}
                 </span>
               </div>
@@ -178,79 +179,6 @@ function MergeList({
           </button>
         );
       })}
-    </div>
-  );
-}
-
-function StepControls({
-  currentStep,
-  totalSteps,
-  isPlaying,
-  onSetStep,
-  onTogglePlay,
-}: {
-  currentStep: number;
-  totalSteps: number;
-  isPlaying: boolean;
-  onSetStep: (step: number) => void;
-  onTogglePlay: () => void;
-}) {
-  const maxStep = totalSteps - 1;
-  return (
-    <div className="flex items-center gap-3 w-full">
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => onSetStep(0)}
-          disabled={currentStep === 0}
-          className="px-2 py-1 rounded text-sm disabled:opacity-30 hover:bg-gray-100 transition-colors cursor-pointer disabled:cursor-default"
-          aria-label="Go to start"
-        >
-          &#x23EE;
-        </button>
-        <button
-          onClick={() => onSetStep(Math.max(0, currentStep - 1))}
-          disabled={currentStep === 0}
-          className="px-2 py-1 rounded text-sm disabled:opacity-30 hover:bg-gray-100 transition-colors cursor-pointer disabled:cursor-default"
-          aria-label="Previous step"
-        >
-          &#x23F4;
-        </button>
-        <button
-          onClick={onTogglePlay}
-          disabled={maxStep === 0}
-          className="px-3 py-1 rounded text-sm bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-30 transition-colors cursor-pointer disabled:cursor-default"
-          aria-label={isPlaying ? "Pause" : "Play"}
-        >
-          {isPlaying ? "❚❚" : "▶"}
-        </button>
-        <button
-          onClick={() => onSetStep(Math.min(maxStep, currentStep + 1))}
-          disabled={currentStep === maxStep}
-          className="px-2 py-1 rounded text-sm disabled:opacity-30 hover:bg-gray-100 transition-colors cursor-pointer disabled:cursor-default"
-          aria-label="Next step"
-        >
-          &#x23F5;
-        </button>
-        <button
-          onClick={() => onSetStep(maxStep)}
-          disabled={currentStep === maxStep}
-          className="px-2 py-1 rounded text-sm disabled:opacity-30 hover:bg-gray-100 transition-colors cursor-pointer disabled:cursor-default"
-          aria-label="Go to end"
-        >
-          &#x23ED;
-        </button>
-      </div>
-      <span className="text-xs text-gray-500 min-w-16">
-        Step {currentStep}/{maxStep}
-      </span>
-      <input
-        type="range"
-        min={0}
-        max={maxStep}
-        value={currentStep}
-        onChange={(e) => onSetStep(Number(e.target.value))}
-        className="flex-1 accent-blue-600"
-      />
     </div>
   );
 }
@@ -270,17 +198,17 @@ function Stats({
 
   return (
     <div className="flex gap-6 text-sm">
-      <div className="flex flex-col items-center px-4 py-2 bg-gray-50 rounded-lg">
-        <span className="text-lg font-bold text-gray-900">{charCount}</span>
-        <span className="text-xs text-gray-500">Characters</span>
+      <div className="flex flex-col items-center px-4 py-2 bg-gray-50 dark:bg-zinc-800/40 rounded-lg">
+        <span className="text-lg font-bold text-gray-900 dark:text-zinc-100">{charCount}</span>
+        <span className="text-xs text-gray-500 dark:text-zinc-500">Characters</span>
       </div>
-      <div className="flex flex-col items-center px-4 py-2 bg-gray-50 rounded-lg">
-        <span className="text-lg font-bold text-gray-900">{mergeCount}</span>
-        <span className="text-xs text-gray-500">Merges</span>
+      <div className="flex flex-col items-center px-4 py-2 bg-gray-50 dark:bg-zinc-800/40 rounded-lg">
+        <span className="text-lg font-bold text-gray-900 dark:text-zinc-100">{mergeCount}</span>
+        <span className="text-xs text-gray-500 dark:text-zinc-500">Merges</span>
       </div>
-      <div className="flex flex-col items-center px-4 py-2 bg-blue-50 rounded-lg">
-        <span className="text-lg font-bold text-blue-700">{tokenCount}</span>
-        <span className="text-xs text-gray-500">Tokens</span>
+      <div className="flex flex-col items-center px-4 py-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+        <span className="text-lg font-bold text-blue-700 dark:text-blue-300">{tokenCount}</span>
+        <span className="text-xs text-gray-500 dark:text-zinc-500">Tokens</span>
       </div>
     </div>
   );
@@ -296,14 +224,14 @@ function TokenInfoPanel({
   onClear: () => void;
 }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4 w-44">
+    <div className="rounded-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 w-44">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+        <h2 className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wide">
           Selected Token
         </h2>
         <button
           onClick={onClear}
-          className="text-gray-400 hover:text-gray-600 text-xs cursor-pointer"
+          className="text-gray-400 dark:text-zinc-500 hover:text-gray-600 text-xs cursor-pointer"
         >
           &times;
         </button>
@@ -315,8 +243,8 @@ function TokenInfoPanel({
           {token.replace(RE_NEWLINE, "↵").replace(RE_SPACE, "␣")}
         </span>
         <div className="text-center">
-          <span className="text-2xl font-bold text-gray-900">{count}</span>
-          <span className="text-xs text-gray-500 block">
+          <span className="text-2xl font-bold text-gray-900 dark:text-zinc-100">{count}</span>
+          <span className="text-xs text-gray-500 dark:text-zinc-500 block">
             {count === 1 ? "occurrence" : "occurrences"}
           </span>
         </div>
@@ -328,12 +256,12 @@ function TokenInfoPanel({
 function LoadingOverlay() {
   return (
     <div className="absolute top-2 right-2 z-10">
-      <div className="h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      <div className="h-5 w-5 border-2 border-blue-600 dark:border-blue-500 border-t-transparent rounded-full animate-spin" />
     </div>
   );
 }
 
-export default function Home() {
+export default function App() {
   const [inputText, setInputText] = useState(
     "In computing, byte-pair encoding (BPE), or digram coding, is an algorithm, first described in 1994 by Philip Gage, for encoding strings of text into smaller strings by creating and using a translation table. A slightly modified version of the algorithm is used in large language model tokenizers.",
   );
@@ -344,7 +272,6 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<ViewMode>("text");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedToken, setSelectedToken] = useState<string | null>(null);
-  const [showInfo, setShowInfo] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const workerRef = useRef<Worker | null>(null);
 
@@ -402,7 +329,7 @@ export default function Home() {
         workerRef.current.terminate();
       }
 
-      const worker = new Worker(new URL("./bpe.worker.ts", import.meta.url));
+      const worker = new BpeWorker();
       workerRef.current = worker;
 
       worker.onmessage = (e: MessageEvent<BPEResult>) => {
@@ -454,50 +381,49 @@ export default function Home() {
       : 0;
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
+    <div className="min-h-screen bg-white text-gray-900 dark:bg-zinc-900 dark:text-zinc-100">
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Header */}
-        <header className="mb-6 flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">BPE Visualizer</h1>
-          <div className="relative">
-            <button
-              onClick={() => setShowInfo((v) => !v)}
-              className="w-8 h-8 rounded-full border border-gray-300 text-gray-500 hover:text-gray-700 hover:border-gray-400 flex items-center justify-center text-sm font-medium transition-colors cursor-pointer"
-              aria-label="About"
-            >
-              ?
-            </button>
-            {showInfo && (
-              <>
-                <div
-                  className="fixed inset-0 z-30"
-                  onClick={() => setShowInfo(false)}
-                />
-                <div className="absolute right-0 top-10 z-40 w-72 rounded-lg border border-gray-200 bg-white shadow-lg p-4 text-sm text-gray-700 leading-relaxed">
-                  <p className="font-semibold mb-2 underline">
-                    {" "}
-                    <a
-                      href="https://en.wikipedia.org/wiki/Byte-pair_encoding"
-                      target="_blank"
-                    >
-                      Byte Pair Encoding (BPE)
-                    </a>
-                    {/* minor to-do: add arrow indicating off-site link */}
-                  </p>
-                  <p>
-                    BPE is a tokenization algorithm that iteratively merges the
-                    most frequent pair of adjacent tokens. It starts with
-                    individual characters and builds up a vocabulary of subword
-                    tokens. This visualizer lets you step through each merge to
-                    see how the algorithm works.
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
-        </header>
+        <SiteHeader title="BPE Playground" repo="bpe-playground">
+          <a
+            href="https://en.wikipedia.org/wiki/Byte-pair_encoding"
+            target="_blank"
+            className="underline text-gray-700 dark:text-zinc-300 hover:text-gray-900 dark:hover:text-zinc-100"
+          >
+            Byte Pair Encoding
+          </a>{" "}
+          is a tokenization algorithm that iteratively merges the most frequent
+          pair of adjacent tokens. This visualizer uses the GPT-2 variant, which
+          starts from individual bytes (via a byte-to-unicode mapping) and builds
+          up a vocabulary of subword tokens. Step through each merge to see how
+          the algorithm works.
+        </SiteHeader>
+        <p className="text-xs text-gray-500 dark:text-zinc-500 mb-5">
+          Sources:{" "}
+          <a
+            href="https://web.archive.org/web/20160326050037/http://www.csse.monash.edu.au/cluster/RJK/Compress/problem.html"
+            target="_blank"
+            className="underline hover:text-gray-700 dark:hover:text-zinc-300"
+          >
+            Gage (1994)
+          </a>
+          {" · "}
+          <a
+            href="https://arxiv.org/abs/1508.07909"
+            target="_blank"
+            className="underline hover:text-gray-700 dark:hover:text-zinc-300"
+          >
+            Sennrich et al. (2016) for NMT
+          </a>
+          {" · "}
+          <a
+            href="https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf"
+            target="_blank"
+            className="underline hover:text-gray-700 dark:hover:text-zinc-300"
+          >
+            GPT-2 byte-level BPE
+          </a>
+        </p>
 
-        {/* Input */}
         <div className="mb-4">
           <textarea
             value={inputText}
@@ -505,11 +431,10 @@ export default function Home() {
             placeholder="Enter text to tokenize..."
             rows={3}
             maxLength={10000}
-            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+            className="w-full rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
           />
         </div>
 
-        {/* Stats and step controls row */}
         <div className="mb-5 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
           <Stats
             inputText={inputText}
@@ -519,13 +444,13 @@ export default function Home() {
           <div className="flex-1 max-w-xl flex items-center gap-3">
             <StepControls
               currentStep={currentStep}
-              totalSteps={totalSteps}
+              maxStep={Math.max(0, totalSteps - 1)}
               isPlaying={isPlaying}
               onSetStep={handleSetStep}
               onTogglePlay={handleTogglePlay}
             />
             <div className="flex items-center gap-1.5 shrink-0">
-              <label className="text-xs text-gray-400 whitespace-nowrap">
+              <label className="text-xs text-gray-400 dark:text-zinc-500 whitespace-nowrap">
                 Max
               </label>
               <input
@@ -534,17 +459,15 @@ export default function Home() {
                 value={maxMerges}
                 onChange={(e) => setMaxMerges(e.target.value)}
                 placeholder="∞"
-                className="w-16 rounded border border-gray-300 bg-white px-2 py-1 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-16 rounded border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
         </div>
 
-        {/* Main grid */}
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-          {/* Merges list */}
-          <div className="relative rounded-lg border border-gray-200 bg-white p-3">
-            <h2 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">
+          <div className="relative rounded-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3">
+            <h2 className="text-xs font-semibold text-gray-400 dark:text-zinc-500 mb-2 uppercase tracking-wide">
               Merges ({bpeResult ? bpeResult.steps.length - 1 : 0})
             </h2>
             {bpeResult && bpeResult.steps.length > 0 ? (
@@ -555,26 +478,25 @@ export default function Home() {
                 viewMode={viewMode}
               />
             ) : (
-              <p className="text-sm text-gray-300 py-4 text-center">
+              <p className="text-sm text-gray-300 dark:text-zinc-600 py-4 text-center">
                 {isLoading ? "\u00A0" : "No merges yet"}
               </p>
             )}
             {isLoading && <LoadingOverlay />}
           </div>
 
-          {/* Token display */}
-          <div className="relative rounded-lg border border-gray-200 bg-white p-6 min-w-0">
+          <div className="relative rounded-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 min-w-0">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+              <h2 className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wide">
                 Tokens
               </h2>
-              <div className="flex items-center bg-gray-100 rounded-lg p-0.5 text-xs">
+              <div className="flex items-center bg-gray-100 dark:bg-zinc-800 rounded-lg p-0.5 text-xs">
                 <button
                   onClick={() => setViewMode("text")}
                   className={`px-3 py-1 rounded-md transition-colors cursor-pointer ${
                     viewMode === "text"
-                      ? "bg-white text-gray-900 shadow-sm font-medium"
-                      : "text-gray-500 hover:text-gray-700"
+                      ? "bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100 shadow-sm font-medium"
+                      : "text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300"
                   }`}
                 >
                   Text
@@ -583,8 +505,8 @@ export default function Home() {
                   onClick={() => setViewMode("utf8")}
                   className={`px-3 py-1 rounded-md transition-colors cursor-pointer ${
                     viewMode === "utf8"
-                      ? "bg-white text-gray-900 shadow-sm font-medium"
-                      : "text-gray-500 hover:text-gray-700"
+                      ? "bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100 shadow-sm font-medium"
+                      : "text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300"
                   }`}
                 >
                   UTF-8
@@ -599,12 +521,11 @@ export default function Home() {
                 onSelectToken={setSelectedToken}
               />
             ) : (
-              <p className="text-sm text-gray-300 py-8 text-center">
+              <p className="text-sm text-gray-300 dark:text-zinc-600 py-8 text-center">
                 {isLoading ? "\u00A0" : "Enter text above to see tokens"}
               </p>
             )}
             {isLoading && <LoadingOverlay />}
-            {/* Token info popup */}
             {selectedToken && (
               <div className="absolute top-4 -right-48 z-20">
                 <TokenInfoPanel
@@ -617,24 +538,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Footer */}
-        <footer className="mt-8 pb-4 text-xs text-gray-400">
-          made by{" "}
-          <span className="text-gray-500 underline">
-            <a href="https://github.com/catherinepereira" target="_blank">
-              catherinepereira
-            </a>
-          </span>
-          , code at{" "}
-          <span className="text-gray-500 underline">
-            <a
-              href="https://github.com/catherinepereira/bpe-visualizer"
-              target="_blank"
-            >
-              bpe-visualizer
-            </a>
-          </span>
-        </footer>
       </div>
     </div>
   );

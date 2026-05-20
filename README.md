@@ -1,4 +1,4 @@
-## BPE Visualizer
+## BPE Playground
 
 This project is heavily inspired by the [Tiktokenizer](https://tiktokenizer.vercel.app) tokenization playground, which implements OpenAI's [tiktoken](https://github.com/openai/tiktoken) tokenization.
 
